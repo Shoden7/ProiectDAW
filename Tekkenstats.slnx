@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TekkenStats.API/TekkenStats.API.csproj" />
+  <Project Path="TekkenStats.Application/TekkenStats.Application.csproj" />
+  <Project Path="TekkenStats.Domain/TekkenStats.Domain.csproj" />
+  <Project Path="TekkenStats.Infrastructure/TekkenStats.Infrastructure.csproj" />
+</Solution>
