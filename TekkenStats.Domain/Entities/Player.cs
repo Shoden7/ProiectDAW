@@ -3,9 +3,14 @@ namespace TekkenStats.Domain.Entities;
 public class Player
 {
     public int Id { get; set; }
+
+    // Polaris ID = stable unique identifier from Bandai Namco / wavu.wiki
     public string PolarisId { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
-    public int TekkenUserId { get; set; }
+
+    // Numeric Tekken user ID from wavu replay data
+    public long TekkenUserId { get; set; }
+
     public string CurrentRank { get; set; } = string.Empty;
     public int DanRank { get; set; }
     public int Wins { get; set; }

@@ -2,37 +2,24 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TekkenStats.Application.DTOs.Auth;
 
-public class RegisterDto
-{
-    [Required, MinLength(3), MaxLength(30)]
-    public string Username { get; set; } = string.Empty;
+public record RegisterDto(
+    [Required, MinLength(3), MaxLength(50)] string Username,
+    [Required, EmailAddress] string Email,
+    [Required, MinLength(8)] string Password
+);
 
-    [Required, EmailAddress]
-    public string Email { get; set; } = string.Empty;
+public record LoginDto(
+    [Required] string Email,
+    [Required] string Password
+);
 
-    [Required, MinLength(6)]
-    public string Password { get; set; } = string.Empty;
-}
+public record AuthResponseDto(
+    string Token,
+    string Username,
+    int UserId,
+    DateTime ExpiresAt
+);
 
-public class LoginDto
-{
-    [Required]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    public string Password { get; set; } = string.Empty;
-}
-
-public class AuthResponseDto
-{
-    public string Token { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
-    public string? LinkedPolarisId { get; set; }
-    public DateTime ExpiresAt { get; set; }
-}
-
-public class LinkPlayerDto
-{
-    [Required]
-    public string PolarisId { get; set; } = string.Empty;
-}
+public record LinkPolarisIdDto(
+    [Required] string PolarisId
+);

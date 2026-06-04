@@ -1,38 +1,82 @@
 namespace TekkenStats.Application.DTOs.Player;
 
-public class PlayerDto
-{
-    public int Id { get; set; }
-    public string PolarisId { get; set; } = string.Empty;
-    public string PlayerName { get; set; } = string.Empty;
-    public string CurrentRank { get; set; } = string.Empty;
-    public int DanRank { get; set; }
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public string MainCharacter { get; set; } = string.Empty;
-    public double WinRate => Wins + Losses > 0 ? Math.Round((double)Wins / (Wins + Losses) * 100, 1) : 0;
-    public int TotalMatches => Wins + Losses;
-    public DateTime LastUpdated { get; set; }
-    public List<CharacterStatDto> CharacterStats { get; set; } = new();
-    public bool IsBookmarked { get; set; }
-}
+public record PlayerSummaryDto(
+    int Id,
+    string PolarisId,
+    string PlayerName,
+    string CurrentRank,
+    int DanRank,
+    int Wins,
+    int Losses,
+    string MainCharacter,
+    double WinRate,
+    DateTime LastUpdated
+);
 
-public class CharacterStatDto
-{
-    public string CharacterName { get; set; } = string.Empty;
-    public int CharacterId { get; set; }
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public string Rank { get; set; } = string.Empty;
-    public int DanRank { get; set; }
-    public double WinRate => Wins + Losses > 0 ? Math.Round((double)Wins / (Wins + Losses) * 100, 1) : 0;
-}
+public record PlayerDetailDto(
+    int Id,
+    string PolarisId,
+    string PlayerName,
+    string CurrentRank,
+    int DanRank,
+    int Wins,
+    int Losses,
+    string MainCharacter,
+    double WinRate,
+    DateTime LastUpdated,
+    IEnumerable<CharacterStatsDto> CharacterStats
+);
 
-public class PlayerSearchResultDto
-{
-    public string PolarisId { get; set; } = string.Empty;
-    public string PlayerName { get; set; } = string.Empty;
-    public string CurrentRank { get; set; } = string.Empty;
-    public int DanRank { get; set; }
-    public string MainCharacter { get; set; } = string.Empty;
-}
+public record CharacterStatsDto(
+    string CharacterName,
+    int CharacterId,
+    int Wins,
+    int Losses,
+    string Rank,
+    int DanRank,
+    double WinRate
+);
+
+public record MatchDto(
+    long Id,
+    string BattleId,
+    int OpponentId,
+    string OpponentName,
+    string MyCharacter,
+    string OpponentCharacter,
+    int MyRankDan,
+    int OpponentRankDan,
+    bool Won,
+    int Rounds,
+    DateTime FoughtAt,
+    string Region
+);
+
+public record PlayerSearchResultDto(
+    int Id,
+    string PolarisId,
+    string PlayerName,
+    string CurrentRank,
+    int DanRank,
+    string MainCharacter
+);
+
+public record LeaderboardEntryDto(
+    int Rank,
+    int Id,
+    string PolarisId,
+    string PlayerName,
+    string CurrentRank,
+    int DanRank,
+    int Wins,
+    int Losses,
+    double WinRate,
+    string MainCharacter
+);
+
+public record PagedResult<T>(
+    IEnumerable<T> Items,
+    int Page,
+    int PageSize,
+    int TotalCount
+);
