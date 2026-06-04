@@ -253,7 +253,7 @@ namespace TekkenStats.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<long>("LastBattleAt")
+                    b.Property<long>("LastBattleId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("UpdatedAt")

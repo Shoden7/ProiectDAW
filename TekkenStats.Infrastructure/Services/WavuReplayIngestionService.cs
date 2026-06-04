@@ -21,26 +21,47 @@ public class WavuReplayIngestionService(
 {
     // Maps wavu dan values to readable rank names
     private static readonly Dictionary<int, string> DanToRank = new()
-    {
-        { 0, "Beginner" }, { 1, "1st Dan" }, { 2, "2nd Dan" }, { 3, "3rd Dan" },
-        { 4, "Initiate" }, { 5, "Initiate" }, { 6, "Initiate" },
-        { 7, "Mentor" }, { 8, "Mentor" }, { 9, "Mentor" },
-        { 10, "Expert" }, { 11, "Expert" }, { 12, "Expert" },
-        { 13, "Veteran" }, { 14, "Veteran" }, { 15, "Veteran" },
-        { 16, "Warrior" }, { 17, "Warrior" }, { 18, "Warrior" },
-        { 19, "Combatant" }, { 20, "Combatant" }, { 21, "Combatant" },
-        { 22, "Brawler" }, { 23, "Brawler" }, { 24, "Brawler" },
-        { 25, "Ranger" }, { 26, "Ranger" }, { 27, "Ranger" },
-        { 28, "Cavalry" }, { 29, "Cavalry" }, { 30, "Cavalry" },
-        { 31, "Warrior" }, { 32, "Fighter" }, { 33, "Strategist" },
-        { 34, "Dominator" }, { 35, "Vanquisher" }, { 36, "Destroyer" },
-        { 37, "Eliminator" }, { 38, "Garyu" }, { 39, "Shinryu" },
-        { 40, "Tenryu" }, { 41, "Mighty Ruler" }, { 42, "Flame Ruler" },
-        { 43, "Battle Ruler" }, { 44, "Fujin" }, { 45, "Raijin" },
-        { 46, "Kishin" }, { 47, "Bushin" }, { 48, "Tekken King" },
-        { 49, "Tekken Emperor" }, { 50, "Tekken God" },
-        { 51, "Tekken God Supreme" }, { 52, "God of Destruction" }
-    };
+{
+    { 0, "Beginner" }, 
+    { 1, "1st Dan" }, 
+    { 2, "2nd Dan" }, 
+    { 3, "Fighter" },      // Blue Tiers
+    { 4, "Strategist" }, 
+    { 5, "Combatant" }, 
+    { 6, "Brawler" }, 
+    { 7, "Ranger" },       // Green Tiers
+    { 8, "Cavalry" }, 
+    { 9, "Warrior" },      // Yellow Tiers
+    { 10, "Assailant" }, 
+    { 11, "Dominator" }, 
+    { 12, "Vanquisher" },  // Orange Tiers
+    { 13, "Destroyer" }, 
+    { 14, "Eliminator" }, 
+    { 15, "Garyu" },       // Red Tiers
+    { 16, "Shinryu" }, 
+    { 17, "Tenryu" }, 
+    { 18, "Mighty Ruler" }, // Ruler Tiers
+    { 19, "Flame Ruler" }, 
+    { 20, "Battle Ruler" }, 
+    { 21, "Fujin" },        // Blue Tiers
+    { 22, "Raijin" }, 
+    { 23, "Kishin" }, 
+    { 24, "Bushin" }, 
+    { 25, "Tekken King" },   // Gold Tiers
+    { 26, "Tekken Emperor" }, 
+    { 27, "Tekken God" }, 
+    { 28, "Tekken God Supreme" }, 
+    { 29, "God of Destruction" }, // Max Base T8 Rank
+    
+    { 30, "God of Destruction 1" },
+    { 31, "God of Destruction 2" },
+    { 32, "God of Destruction 3" },
+    { 33, "God of Destruction 4" },
+    { 34, "God of Destruction 5" },
+    { 35, "God of Destruction 6" }, 
+    { 36, "God of Destruction 7" },
+    { 37, "God of Destruction Infinite" }
+};
 
     // wavu character IDs -> names
     private static readonly Dictionary<int, string> CharacterNames = new()
@@ -93,8 +114,7 @@ public class WavuReplayIngestionService(
         int saved = 0;
         var newMatches = new List<Match>();
 
-        // Collect all player data first so we can batch upsert
-        var playerCache = new Dictionary<long, Player>(); // tekkenUserId -> entity
+        var playerCache = new Dictionary<long, Player>();
 
         foreach (var replay in replays)
         {
@@ -107,11 +127,9 @@ public class WavuReplayIngestionService(
 
             await players.SaveChangesAsync(ct);
 
-            // Re-fetch to get assigned IDs after save
             p1 = await players.GetByTekkenUserIdAsync(replay.P1UserId, ct) ?? p1;
             p2 = await players.GetByTekkenUserIdAsync(replay.P2UserId, ct) ?? p2;
 
-            // Update character stats
             await UpdateCharacterStatsAsync(p1.Id, replay.P1CharaId, replay.P1Win == 1, ct);
             await UpdateCharacterStatsAsync(p2.Id, replay.P2CharaId, replay.P2Win == 1, ct);
 
@@ -142,7 +160,6 @@ public class WavuReplayIngestionService(
             await matches.SaveChangesAsync(ct);
         }
 
-        // Track the oldest timestamp in this batch as the cursor for the next run
         if (replays.Count > 0)
         {
             long minBattleAt = replays.Min(r => r.BattleAt);
@@ -214,9 +231,6 @@ public class WavuReplayIngestionService(
         await charStats.SaveChangesAsync(ct);
     }
 }
-
-// ── wavu.wiki JSON shapes ─────────────────────────────────────────────────────
-
 
 public class WavuReplay
 {

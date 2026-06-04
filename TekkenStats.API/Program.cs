@@ -23,7 +23,6 @@ builder.Services.AddScoped<IPlayerCharacterStatsRepository, PlayerCharacterStats
 builder.Services.AddScoped<IBookmarkRepository, BookmarkRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IIngestionStateRepository, IngestionStateRepository>();
-
 // ── Application services ──────────────────────────────────────────────────────
 builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<BookmarkService>();
@@ -93,11 +92,41 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ── Auto-migrate on startup ───────────────────────────────────────────────────
+// ── Auto-migrate & Data Patch on startup ──────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<TekkenStatsDbContext>();
     db.Database.Migrate();
+
+    // 🛠️ SAFE DATA PATCH: Fixes old rank names without deleting database records!
+    try
+    {
+        var legacyGods = db.Players.Where(p => p.DanRank >= 30 && p.DanRank <= 37).ToList();
+        if (legacyGods.Any())
+        {
+            foreach (var player in legacyGods)
+            {
+                player.CurrentRank = player.DanRank switch
+                {
+                    30 => "God of Destruction 1",
+                    31 => "God of Destruction 2",
+                    32 => "God of Destruction 3",
+                    33 => "God of Destruction 4",
+                    34 => "God of Destruction 5",
+                    35 => "God of Destruction 6",
+                    36 => "God of Destruction 7",
+                    37 => "God of Destruction Infinite",
+                    _  => player.CurrentRank
+                };
+            }
+            db.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        // Fail-safe to ensure application still starts up if anything goes wrong
+        Console.WriteLine($"Error running rank synchronization patch: {ex.Message}");
+    }
 }
 
 if (app.Environment.IsDevelopment())

@@ -37,17 +37,24 @@ public class PlayerService(
     }
 
     public async Task<PagedResult<LeaderboardEntryDto>> GetLeaderboardAsync(
-        int page, int pageSize, CancellationToken ct = default)
-    {
-        pageSize = Math.Clamp(pageSize, 1, 100);
-        page = Math.Max(1, page);
-        var results = await players.GetLeaderboardAsync(page, pageSize, ct);
-        var dtos = results.Select((p, i) => new LeaderboardEntryDto(
-            (page - 1) * pageSize + i + 1,
-            p.Id, p.PolarisId, p.PlayerName, p.CurrentRank, p.DanRank,
-            p.Wins, p.Losses, WinRate(p.Wins, p.Losses), p.MainCharacter));
-        return new PagedResult<LeaderboardEntryDto>(dtos, page, pageSize, dtos.Count());
-    }
+    int page, int pageSize, CancellationToken ct = default)
+{
+    pageSize = Math.Clamp(pageSize, 1, 100);
+    page = Math.Max(1, page);
+    
+    var results = await players.GetLeaderboardAsync(page, pageSize, ct);
+    
+    // ⚡ FIX: Pull the real overall count from your data repository table layout layer
+    // If your IPlayerRepository doesn't expose a dynamic count method, use an aggregate counter line:
+    int totalSystemPlayers = await players.GetTotalCountAsync(ct); 
+
+    var dtos = results.Select((p, i) => new LeaderboardEntryDto(
+        (page - 1) * pageSize + i + 1,
+        p.Id, p.PolarisId, p.PlayerName, p.CurrentRank, p.DanRank,
+        p.Wins, p.Losses, WinRate(p.Wins, p.Losses), p.MainCharacter)).ToList();
+
+    return new PagedResult<LeaderboardEntryDto>(dtos, page, pageSize, totalSystemPlayers);
+}
 
     public async Task<PagedResult<MatchDto>> GetPlayerMatchesAsync(
         int playerId, int page, int pageSize, CancellationToken ct = default)
@@ -78,19 +85,41 @@ public class PlayerService(
         return new PagedResult<MatchDto>(dtos, page, pageSize, dtos.Count());
     }
 
-    private static PlayerDetailDto MapToDetail(
-        Domain.Entities.Player p,
-        IEnumerable<Domain.Entities.PlayerCharacterStats> stats)
-    {
-        var charDtos = stats.Select(s => new CharacterStatsDto(
-            s.CharacterName, s.CharacterId, s.Wins, s.Losses, s.Rank, s.DanRank,
-            WinRate(s.Wins, s.Losses)));
+   private static PlayerDetailDto MapToDetail(
+    Domain.Entities.Player p,
+    IEnumerable<Domain.Entities.PlayerCharacterStats> stats)
+{
+    var charDtos = stats.Select(s => new CharacterStatsDto(
+        s.CharacterName, 
+        s.CharacterId, 
+        s.Wins, 
+        s.Losses, 
+        GetDynamicRankName(s.DanRank, p.CurrentRank), // ⚡ FIX: Use an accurate fallback helper
+        s.DanRank,
+        WinRate(s.Wins, s.Losses)));
 
-        return new PlayerDetailDto(
-            p.Id, p.PolarisId, p.PlayerName, p.CurrentRank, p.DanRank,
-            p.Wins, p.Losses, p.MainCharacter, WinRate(p.Wins, p.Losses),
-            p.LastUpdated, charDtos);
-    }
+    return new PlayerDetailDto(
+        p.Id, p.PolarisId, p.PlayerName, p.CurrentRank, p.DanRank,
+        p.Wins, p.Losses, p.MainCharacter, WinRate(p.Wins, p.Losses),
+        p.LastUpdated, charDtos);
+}
+
+// Simple fallback string parser helper
+private static string GetDynamicRankName(int danRank, string fallbackPlayerRank)
+{
+    return danRank switch
+    {
+        30 => "God of Destruction 1",
+        31 => "God of Destruction 2",
+        32 => "God of Destruction 3",
+        33 => "God of Destruction 4",
+        34 => "God of Destruction 5",
+        35 => "God of Destruction 6",
+        36 => "God of Destruction 7",
+        37 => "God of Destruction Infinite",
+        _ => fallbackPlayerRank 
+    };
+}
 
     private static double WinRate(int wins, int losses)
     {

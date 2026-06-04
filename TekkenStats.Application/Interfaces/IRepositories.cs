@@ -7,6 +7,7 @@ public interface IPlayerRepository
     Task<Player?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Player?> GetByPolarisIdAsync(string polarisId, CancellationToken ct = default);
     Task<Player?> GetByTekkenUserIdAsync(long tekkenUserId, CancellationToken ct = default);
+    Task<int> GetTotalCountAsync(CancellationToken ct);
     Task<IEnumerable<Player>> SearchByNameAsync(string name, int page, int pageSize, CancellationToken ct = default);
     Task<IEnumerable<Player>> GetLeaderboardAsync(int page, int pageSize, CancellationToken ct = default);
     Task<Player> UpsertAsync(Player player, CancellationToken ct = default);

@@ -9,6 +9,7 @@ public class TekkenStatsDbContext(DbContextOptions<TekkenStatsDbContext> options
     public DbSet<Match> Matches => Set<Match>();
     public DbSet<PlayerCharacterStats> PlayerCharacterStats => Set<PlayerCharacterStats>();
     public DbSet<User> Users => Set<User>();
+    
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
     public DbSet<IngestionState> IngestionStates => Set<IngestionState>();
 
@@ -106,6 +107,6 @@ public class TekkenStatsDbContext(DbContextOptions<TekkenStatsDbContext> options
 public class IngestionState
 {
     public int Id { get; set; } = 1;
-    public long LastBattleAt { get; set; }
+    public long LastBattleId { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
