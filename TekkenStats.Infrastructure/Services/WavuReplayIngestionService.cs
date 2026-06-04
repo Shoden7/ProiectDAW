@@ -63,10 +63,9 @@ public class WavuReplayIngestionService(
         var url = $"https://wank.wavu.wiki/api/replays?before={before}";
         logger.LogInformation("Fetching replays before={Before} from {Url}", before, url);
 
-        WavuReplayResponse? response;
+        List<WavuReplay>? replays;
         try
         {
-            // wavu requires Accept-Encoding: gzip
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("Accept-Encoding", "gzip");
             var httpResponse = await httpClient.SendAsync(request, ct);
@@ -74,7 +73,7 @@ public class WavuReplayIngestionService(
 
             await using var compressed = await httpResponse.Content.ReadAsStreamAsync(ct);
             await using var decompressed = new GZipStream(compressed, CompressionMode.Decompress);
-            response = await JsonSerializer.DeserializeAsync<WavuReplayResponse>(decompressed,
+            replays = await JsonSerializer.DeserializeAsync<List<WavuReplay>>(decompressed,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, ct);
         }
         catch (Exception ex)
@@ -83,13 +82,13 @@ public class WavuReplayIngestionService(
             return 0;
         }
 
-        if (response?.Replays is null || response.Replays.Count == 0)
+        if (replays is null || replays.Count == 0)
         {
             logger.LogInformation("No replays returned for before={Before}", before);
             return 0;
         }
 
-        logger.LogInformation("Processing {Count} replays", response.Replays.Count);
+        logger.LogInformation("Processing {Count} replays", replays.Count);
 
         int saved = 0;
         var newMatches = new List<Match>();
@@ -97,7 +96,7 @@ public class WavuReplayIngestionService(
         // Collect all player data first so we can batch upsert
         var playerCache = new Dictionary<long, Player>(); // tekkenUserId -> entity
 
-        foreach (var replay in response.Replays)
+        foreach (var replay in replays)
         {
             if (await matches.ExistsByBattleIdAsync(replay.BattleId, ct)) continue;
 
@@ -144,9 +143,9 @@ public class WavuReplayIngestionService(
         }
 
         // Track the oldest timestamp in this batch as the cursor for the next run
-        if (response.Replays.Count > 0)
+        if (replays.Count > 0)
         {
-            long minBattleAt = response.Replays.Min(r => r.BattleAt);
+            long minBattleAt = replays.Min(r => r.BattleAt);
             await state.SetLastBattleAtAsync(minBattleAt, ct);
         }
 
@@ -218,11 +217,6 @@ public class WavuReplayIngestionService(
 
 // ── wavu.wiki JSON shapes ─────────────────────────────────────────────────────
 
-public class WavuReplayResponse
-{
-    [JsonPropertyName("replays")]
-    public List<WavuReplay> Replays { get; set; } = [];
-}
 
 public class WavuReplay
 {
